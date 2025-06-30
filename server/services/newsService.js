@@ -6,22 +6,51 @@ class NewsService {
     this.trackedSubjects = new Set();
     this.newsCache = new Map(); // subject -> timeline of articles
     this.lastChecked = new Map(); // subject -> last check timestamp
+    this.customQueries = new Map(); // subject -> custom search query
   }
 
   // Add a subject to track
-  addSubject(subject) {
-    this.trackedSubjects.add(subject.toLowerCase());
-    if (!this.newsCache.has(subject.toLowerCase())) {
-      this.newsCache.set(subject.toLowerCase(), []);
-      this.lastChecked.set(subject.toLowerCase(), new Date());
+  addSubject(subject, customQuery = null) {
+    const key = subject.toLowerCase();
+    this.trackedSubjects.add(key);
+    if (!this.newsCache.has(key)) {
+      this.newsCache.set(key, []);
+      this.lastChecked.set(key, new Date());
+      
+      // Store custom query if provided
+      if (customQuery) {
+        if (!this.customQueries) this.customQueries = new Map();
+        this.customQueries.set(key, customQuery);
+      }
     }
   }
 
   // Remove a subject from tracking
   removeSubject(subject) {
-    this.trackedSubjects.delete(subject.toLowerCase());
-    this.newsCache.delete(subject.toLowerCase());
-    this.lastChecked.delete(subject.toLowerCase());
+    const key = subject.toLowerCase();
+    this.trackedSubjects.delete(key);
+    this.newsCache.delete(key);
+    this.lastChecked.delete(key);
+    if (this.customQueries) {
+      this.customQueries.delete(key);
+    }
+  }
+
+  // Update custom search query for a subject
+  updateCustomQuery(subject, customQuery) {
+    const key = subject.toLowerCase();
+    if (this.trackedSubjects.has(key)) {
+      if (!this.customQueries) this.customQueries = new Map();
+      this.customQueries.set(key, customQuery);
+      return true;
+    }
+    return false;
+  }
+
+  // Get custom query for a subject
+  getCustomQuery(subject) {
+    const key = subject.toLowerCase();
+    return this.customQueries ? this.customQueries.get(key) : null;
   }
 
   // Get timeline for a subject
@@ -31,6 +60,13 @@ class NewsService {
 
   // Build more accurate search query
   buildSearchQuery(subject) {
+    const key = subject.toLowerCase();
+    
+    // Check if user has a custom query first
+    if (this.customQueries && this.customQueries.has(key)) {
+      return this.customQueries.get(key);
+    }
+    
     // Clean and prepare the subject
     const cleanSubject = subject.trim().toLowerCase();
     
@@ -39,18 +75,20 @@ class NewsService {
       return `"${cleanSubject}"`;
     }
     
-    // For single words, enhance with related terms
+    // For single words, enhance with related terms (simplified for NewsAPI compatibility)
     const enhancements = {
-      'tesla': 'tesla OR "elon musk tesla" OR "tesla motors"',
-      'ai': '"artificial intelligence" OR "machine learning" OR AI OR "neural networks"',
-      'palestine': 'palestine OR palestinian OR gaza OR "west bank"',
-      'bitcoin': 'bitcoin OR BTC OR cryptocurrency OR "crypto currency"',
-      'climate': '"climate change" OR "global warming" OR "climate crisis"',
-      'covid': 'covid OR coronavirus OR "covid-19" OR pandemic',
-      'ukraine': 'ukraine OR ukrainian OR kyiv OR kiev',
-      'apple': 'apple AND (iphone OR ipad OR mac OR "tim cook" OR cupertino) NOT fruit',
-      'google': 'google OR alphabet OR "search engine" NOT "google maps directions"',
-      'meta': 'meta OR facebook OR instagram OR "mark zuckerberg" NOT "meta description"'
+      'tesla': 'tesla',
+      'ai': 'artificial intelligence',
+      'palestine': 'palestine',
+      'bitcoin': 'bitcoin cryptocurrency',
+      'climate': 'climate change',
+      'covid': 'covid coronavirus',
+      'ukraine': 'ukraine',
+      'apple': 'apple iphone',
+      'google': 'google',
+      'meta': 'meta facebook',
+      'liverpool': 'liverpool fc',
+      'muslims': 'muslim islam'
     };
     
     return enhancements[cleanSubject] || `"${cleanSubject}"`;
@@ -64,6 +102,8 @@ class NewsService {
         console.warn('NEWS_API_KEY not found, using mock data');
         return this.getMockNews(subject);
       }
+      
+      console.log(`API Key present: ${apiKey ? 'YES' : 'NO'} (length: ${apiKey ? apiKey.length : 0})`);
 
       const searchQuery = this.buildSearchQuery(subject);
       const fromParam = from ? `&from=${from.toISOString()}` : '';
@@ -71,15 +111,14 @@ class NewsService {
       // Enhanced query with better parameters
       const url = `https://newsapi.org/v2/everything?` +
         `q=${encodeURIComponent(searchQuery)}&` +
-        `searchIn=title,description&` +
         `sortBy=publishedAt&` +
         `pageSize=25&` +
-        `language=en&` +
-        `excludeDomains=reddit.com,twitter.com,facebook.com,instagram.com,tiktok.com&` +
-        `${fromParam}&` +
-        `apiKey=${apiKey}`;
+        `language=en` +
+        `${fromParam ? '&' + fromParam : ''}` +
+        `&apiKey=${apiKey}`;
       
       console.log(`Search query for "${subject}": ${searchQuery}`);
+      console.log(`Full URL: ${url}`);
       
       const response = await axios.get(url);
       console.log(`NewsAPI returned ${response.data.articles.length} articles for "${subject}" (requested 25)`);
@@ -109,6 +148,10 @@ class NewsService {
       }));
     } catch (error) {
       console.error('Error fetching news:', error.message);
+      if (error.response) {
+        console.error('NewsAPI error response:', error.response.status, error.response.data);
+      }
+      console.log('Falling back to mock data for:', subject);
       return this.getMockNews(subject);
     }
   }

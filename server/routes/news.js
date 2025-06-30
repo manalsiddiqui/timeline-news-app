@@ -27,7 +27,7 @@ router.get('/subjects', (req, res) => {
 // Add a new subject to track
 router.post('/subjects', async (req, res) => {
   try {
-    const { subject } = req.body;
+    const { subject, customQuery } = req.body;
     if (!subject) {
       return res.status(400).json({ error: 'Subject is required' });
     }
@@ -36,7 +36,7 @@ router.post('/subjects', async (req, res) => {
       return res.status(500).json({ error: 'News service not initialized' });
     }
 
-    newsService.addSubject(subject);
+    newsService.addSubject(subject, customQuery);
     
     // Get initial news for the subject
     const timeline = await newsService.getInitialNews(subject);
@@ -44,8 +44,35 @@ router.post('/subjects', async (req, res) => {
     res.json({ 
       message: `Started tracking ${subject}`,
       subject: subject.toLowerCase(),
+      customQuery: customQuery || null,
       timeline 
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update custom query for a subject
+router.put('/subjects/:subject/query', (req, res) => {
+  try {
+    const { subject } = req.params;
+    const { customQuery } = req.body;
+    
+    if (!newsService) {
+      return res.status(500).json({ error: 'News service not initialized' });
+    }
+
+    const updated = newsService.updateCustomQuery(subject, customQuery);
+    
+    if (updated) {
+      res.json({ 
+        message: `Updated search query for ${subject}`,
+        subject: subject.toLowerCase(),
+        customQuery 
+      });
+    } else {
+      res.status(404).json({ error: 'Subject not found' });
+    }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
