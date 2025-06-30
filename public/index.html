@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timeline News</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="nav">
+                <div class="logo">
+                    <h1>Timeline</h1>
+                </div>
+                <div class="nav-actions">
+                    <button class="btn btn-primary" id="addSubjectBtn">
+                        <span class="btn-icon">+</span>
+                        Track Subject
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h2 class="hero-title">Stay informed with<br>intelligent news tracking</h2>
+                <p class="hero-subtitle">Get real-time alerts and follow the complete timeline of any story. Never miss context again.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Subject Management -->
+            <section class="subjects-section">
+                <div class="section-header">
+                    <h3>Tracked Subjects</h3>
+                    <div class="subjects-count" id="subjectsCount">0 subjects</div>
+                </div>
+                <div class="subjects-grid" id="subjectsGrid">
+                    <div class="empty-state" id="emptyState">
+                        <div class="empty-icon">📰</div>
+                        <h4>No subjects tracked yet</h4>
+                        <p>Start tracking news by adding a subject above</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Timeline Section -->
+            <section class="timeline-section" id="timelineSection" style="display: none;">
+                <div class="timeline-header">
+                    <h3 id="timelineTitle">Timeline</h3>
+                    <button class="btn btn-secondary" id="closeTimelineBtn">Close</button>
+                </div>
+                <div class="timeline" id="timeline">
+                    <!-- Timeline items will be populated here -->
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Add Subject Modal -->
+    <div class="modal-overlay" id="modalOverlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h4>Track New Subject</h4>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addSubjectForm">
+                    <div class="form-group">
+                        <label for="subjectInput">Subject or Topic</label>
+                        <input type="text" id="subjectInput" placeholder="e.g., Climate Change, AI Technology, Election 2024" required>
+                        <small>Enter any topic, person, or event you want to track</small>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Start Tracking</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification" style="display: none;">
+        <div class="notification-content">
+            <span class="notification-text" id="notificationText"></span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+</body>
+</html> 
