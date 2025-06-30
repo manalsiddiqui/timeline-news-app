@@ -2,6 +2,10 @@
 
 A beautiful, Apple-inspired news tracking application that provides real-time alerts and timeline-based news updates for any subject you want to follow.
 
+**🚀 Live Demo: [Deployed on Render](https://timeline-news-app.onrender.com)**
+
+**Last Updated:** June 29, 2024 - Deployed with fixes for Render hosting
+
 ## ✨ Features
 
 - **Clean, Apple-inspired Design**: Modern UI with smooth animations and elegant typography
@@ -35,7 +39,7 @@ npm install
    - Get a free API key from [NewsAPI.org](https://newsapi.org/)
    - Create a `.env` file in the root directory:
    ```
-   PORT=5000
+   PORT=3001
    NEWS_API_KEY=your_api_key_here
    ```
    - If you don't provide an API key, the app will use mock data for demonstration
