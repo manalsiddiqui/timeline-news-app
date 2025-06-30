@@ -29,6 +29,33 @@ class NewsService {
     return this.newsCache.get(subject.toLowerCase()) || [];
   }
 
+  // Build more accurate search query
+  buildSearchQuery(subject) {
+    // Clean and prepare the subject
+    const cleanSubject = subject.trim().toLowerCase();
+    
+    // For multi-word subjects, use exact phrase matching
+    if (cleanSubject.includes(' ')) {
+      return `"${cleanSubject}"`;
+    }
+    
+    // For single words, enhance with related terms
+    const enhancements = {
+      'tesla': 'tesla OR "elon musk tesla" OR "tesla motors"',
+      'ai': '"artificial intelligence" OR "machine learning" OR AI OR "neural networks"',
+      'palestine': 'palestine OR palestinian OR gaza OR "west bank"',
+      'bitcoin': 'bitcoin OR BTC OR cryptocurrency OR "crypto currency"',
+      'climate': '"climate change" OR "global warming" OR "climate crisis"',
+      'covid': 'covid OR coronavirus OR "covid-19" OR pandemic',
+      'ukraine': 'ukraine OR ukrainian OR kyiv OR kiev',
+      'apple': 'apple AND (iphone OR ipad OR mac OR "tim cook" OR cupertino) NOT fruit',
+      'google': 'google OR alphabet OR "search engine" NOT "google maps directions"',
+      'meta': 'meta OR facebook OR instagram OR "mark zuckerberg" NOT "meta description"'
+    };
+    
+    return enhancements[cleanSubject] || `"${cleanSubject}"`;
+  }
+
   // Fetch news from NewsAPI (you'll need an API key)
   async fetchNewsFromAPI(subject, from = null) {
     try {
@@ -38,11 +65,39 @@ class NewsService {
         return this.getMockNews(subject);
       }
 
+      const searchQuery = this.buildSearchQuery(subject);
       const fromParam = from ? `&from=${from.toISOString()}` : '';
-      const url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(subject)}&sortBy=publishedAt&pageSize=20${fromParam}&apiKey=${apiKey}`;
+      
+      // Enhanced query with better parameters
+      const url = `https://newsapi.org/v2/everything?` +
+        `q=${encodeURIComponent(searchQuery)}&` +
+        `searchIn=title,description&` +
+        `sortBy=publishedAt&` +
+        `pageSize=25&` +
+        `language=en&` +
+        `excludeDomains=reddit.com,twitter.com,facebook.com,instagram.com,tiktok.com&` +
+        `${fromParam}&` +
+        `apiKey=${apiKey}`;
+      
+      console.log(`Search query for "${subject}": ${searchQuery}`);
       
       const response = await axios.get(url);
-      return response.data.articles.map(article => ({
+      console.log(`NewsAPI returned ${response.data.articles.length} articles for "${subject}" (requested 25)`);
+      console.log(`Total results available: ${response.data.totalResults}`);
+      
+      // Filter out articles with missing essential data
+      const validArticles = response.data.articles.filter(article => 
+        article.title && 
+        article.title !== '[Removed]' && 
+        article.description && 
+        article.description !== '[Removed]' &&
+        article.url &&
+        article.publishedAt
+      );
+      
+      console.log(`Valid articles after filtering: ${validArticles.length}`);
+      
+      return validArticles.map(article => ({
         id: article.url,
         title: article.title,
         description: article.description,
